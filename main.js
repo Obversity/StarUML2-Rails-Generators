@@ -35,52 +35,44 @@ define(function (require, exports, module) {
                    if (buttonId === Dialogs.DIALOG_BTN_OK && selected) {
                        base = selected;
                        console.log(base);
-                       var generators = "";
 
-                       for (var i = 0; i < base.ownedElements.length; i++) {
-                         var elem = base.ownedElements[i];
+                       var generatorType = "model"
 
-                         if (elem instanceof type.UMLClass) {
-                           var generatorString = "rails generate scaffold ";
-                           for (var n = 0; n < elem.attributes.length; n++) {
-                             var attribute = elem.attributes[n];
-                             generatorString += attribute.name + ":" + attribute.type + " ";
+                       Dialogs.showInputDialog(
+                         "What type of generator do you want? (Defaults to model.)"
+                       ).done(function(buttonId, text){
+
+                         if(buttonId === Dialogs.DIALOG_BTN_OK)
+                         {
+                           if(text != "")
+                           {
+                             generatorType = text;
                            }
-                           generators += generatorString + "\n"
-
                          }
 
-                       }
+                         var generators = "";
 
-                       alert(generators); 
-
-                       // If path is not assigned, popup Open Dialog to select a folder
-
-                          // CsharpCodeGenerator.generate(base, path, options).then(result.resolve, result.reject);
+                         for (var i = 0; i < base.ownedElements.length; i++) {
+                           var elem = base.ownedElements[i];
+                           if (elem instanceof type.UMLClass) {
+                             var generatorString = "rails generate " + generatorType + " " + elem.name + " ";
+                             for (var n = 0; n < elem.attributes.length; n++) {
+                               var attribute = elem.attributes[n];
+                               if(typeof attribute.type === "string"){
+                                 generatorString += attribute.name + ":" + attribute.type + " ";
+                               }
+                             }
+                             generators += generatorString + "\n\n"
+                           }
+                         }
+                         Dialogs.showTextDialog("Here's your generators:", generators);
+                       });
 
                    } else {
                        result.reject();
                    }
                 });
-      } //else {
-      //      // If path is not assigned, popup Open Dialog to select a folder
-      //      if (!path) {
-      //          FileSystem.showOpenDialog(false, true, "Select a folder where generated codes to be located", null, null, function (err, files) {
-      //              if (!err) {
-      //                  if (files.length > 0) {
-      //                      path = files[0];
-      //                      CsharpCodeGenerator.generate(base, path, options).then(result.resolve, result.reject);
-      //                  } else {
-      //                      result.reject(FileSystem.USER_CANCELED);
-      //                  }
-      //              } else {
-      //                  result.reject(err);
-      //              }
-      //          });
-      //      } else {
-      //          CsharpCodeGenerator.generate(base, path, options).then(result.resolve, result.reject);
-      //      }
-      //  }
+      }
        return result.promise();
 
     }
