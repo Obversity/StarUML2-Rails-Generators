@@ -21,6 +21,10 @@ define(function (require, exports, module) {
         CMD_RAILS_GENERATE = "rails.generate";
 
     //handler for the rails generate command
+    function _hasBelongsTo(elem){
+      debugger;
+    }
+
     function _handleGenerate(base, path, options){
       var result = new $.Deferred();
       console.log(result);
@@ -36,6 +40,9 @@ define(function (require, exports, module) {
                        base = selected;
                        console.log(base);
 
+                       //hash to store models
+                       var models = {};
+
                        var generatorType = "model"
 
                        Dialogs.showInputDialog(
@@ -50,21 +57,88 @@ define(function (require, exports, module) {
                            }
                          }
 
-                         var generators = "";
-
                          for (var i = 0; i < base.ownedElements.length; i++) {
                            var elem = base.ownedElements[i];
                            if (elem instanceof type.UMLClass) {
-                             var generatorString = "rails generate " + generatorType + " " + elem.name + " ";
+
+                             var modelName = elem.name;
+                             //GET ATTRIBUTES FROM CLASS
                              for (var n = 0; n < elem.attributes.length; n++) {
                                var attribute = elem.attributes[n];
                                if(typeof attribute.type === "string"){
-                                 generatorString += attribute.name + ":" + attribute.type + " ";
+                                 debugger;
+                                 models[elem.name] = models[elem.name] || []
+                                 models[elem.name].push(
+                                   {"attributeName": attribute.name,
+                                  "attributeType": attribute.type}
+                                    );
                                }
                              }
-                             generators += generatorString + "\n\n"
+                             //END GET ATTRIBUTES
+
+                             //GET ASSOCIATIONS
+                             for (var n = 0; n < elem.ownedElements.length; n++) {
+                               var association = elem.ownedElements[n];
+                               if(association instanceof type.UMLAssociation)
+                               {
+                                 var end1 = association.end1;
+                                 var end2 = association.end2;
+
+                                 var ref1 = end1.reference;
+                                 var ref2 = end2.reference;
+
+                                 var ref1Name = ref1.name;
+                                 var ref2Name = ref2.name;
+
+                                 //MANY TO MANY
+                                 if(end1.multiplicity=="*"&&end2.multiplicity=="*")
+                                 {
+                                   models[ref1.name+ref2.name] = []
+                                    models[ref1.name+ref2.name].push(
+                                      {"attributeName": ref1Name, "attributeType": "references"}
+                                      );
+                                    models[ref1.name+ref2.name].push(
+                                      {"attributeName": ref1Name, "attributeType": "references"}
+                                      );
+                                 }
+                                 else if(end1.multiplicity == "*")
+                                 {
+                                   models[ref2.name] = models[ref2.name] || []
+                                   models[ref2.name].push(
+                                      {"attributeName":ref1Name,
+                                      "attributeType" : "references"}
+                                    )
+                                 }
+                                 else if(end2.multiplicity == "*")
+                                 {
+                                   models[ref2.name] = models[ref2.name] || []
+                                    models[ref2.name].push(
+                                      {"attributeName":ref1Name,
+                                      "attributeType" : "references"}
+                                    )
+                                 }
+                               }
+                             }
+                             //END GET ASSOCIATIONS
                            }
                          }
+
+                         //create generator strings out of the models hash
+                         var generators = "";
+                         for(var model in models)
+                         {
+                           if(models.hasOwnProperty(model))
+                           {
+                             generators += "rails generate " + generatorType + " " + model;
+                             var attributes = models[model];
+                             for (var i = 0; i < attributes.length; i++) {
+                               var kvp = attributes[i];
+                               generators += " " + kvp["attributeName"] + ":" + kvp["attributeType"];
+                             }
+                           }
+                           generators += "\n\n";
+                         }
+
                          Dialogs.showTextDialog("Here's your generators:", generators);
                        });
 
