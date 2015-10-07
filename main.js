@@ -33,6 +33,7 @@ define(function (require, exports, module) {
       // options = options || CsharpPreferences.getGenOptions();
 
        // If base is not assigned, popup ElementPicker
+       //TODO: refactor to use class for the 'model' object, rather than it just being an array of objects
        if (!base) {
            ElementPickerDialog.showDialog("Select a base model to generate codes", null, type.UMLPackage)
                .done(function (buttonId, selected) {
@@ -66,7 +67,6 @@ define(function (require, exports, module) {
                              for (var n = 0; n < elem.attributes.length; n++) {
                                var attribute = elem.attributes[n];
                                if(typeof attribute.type === "string"){
-                                 debugger;
                                  models[elem.name] = models[elem.name] || []
                                  models[elem.name].push(
                                    {"attributeName": attribute.name,
@@ -93,12 +93,14 @@ define(function (require, exports, module) {
                                  //MANY TO MANY
                                  if(end1.multiplicity=="*"&&end2.multiplicity=="*")
                                  {
-                                   models[ref1.name+ref2.name] = []
-                                    models[ref1.name+ref2.name].push(
+                                   var tableName = [ref1.name, ref2.name].sort().join("_");
+
+                                   models[tableName] = []
+                                    models[tableName].push(
                                       {"attributeName": ref1Name, "attributeType": "references"}
                                       );
-                                    models[ref1.name+ref2.name].push(
-                                      {"attributeName": ref1Name, "attributeType": "references"}
+                                    models[tableName].push(
+                                      {"attributeName": ref2Name, "attributeType": "references"}
                                       );
                                  }
                                  else if(end1.multiplicity == "*")
@@ -139,7 +141,7 @@ define(function (require, exports, module) {
                            generators += "\n\n";
                          }
 
-                         Dialogs.showTextDialog("Here's your generators:", generators);
+                         Dialogs.showTextDialog("Here's your generators:", generators.toLowerCase());
                        });
 
                    } else {
